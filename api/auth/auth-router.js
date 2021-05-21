@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = require("../../config/secret");
+const { JWT_SECRET } = require("../../config/secret");
 const bcrypt = require("bcryptjs");
 const Users = require("./auth-model");
 
@@ -65,7 +65,7 @@ if(user.username && user.password){
 });
 
 router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -89,6 +89,42 @@ router.post('/login', (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
+
+      const user = req.body;
+
+      const { username, password } = req.body;
+
+      if(user.username && user.password){
+        Users.getByFilter({ username })
+        .then(([foundUser])=>{
+          if(foundUser && bcrypt.compareSync(password, foundUser.password)){
+            const token = buildToken(foundUser)
+            res.status(200).json({message: `welcome, ${foundUser.username}`, token})
+          } else {
+            res.status(406).json({message: "invalid credentials"});
+          }
+        })
+        .catch((err)=>{
+          res.status(500).json({message: err.message});
+        })
+      } else {
+        res.status(406).json({message: "username and password required"});
+      }
+
+
 });
+
+function buildToken(user){
+
+  const payload = {
+    sub: user.id,
+    username: user.username
+  }
+  const options = {
+    expiresIn: "1d",
+  }
+  const token = jwt.sign(payload, JWT_SECRET, options);
+  return token;
+}
 
 module.exports = router;
