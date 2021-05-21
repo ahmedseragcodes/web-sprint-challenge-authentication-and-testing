@@ -16,4 +16,19 @@ server.use(express.json());
 server.use('/api/auth', authRouter);
 server.use('/api/jokes', restrict, jokesRouter); // only logged-in users should have access!
 
+//SANITY CHECK ENDPOINT
+server.get("/", (req, res, next)=>{
+    res.json({message: "API Up"});
+});
+
+//Global Error Handling 
+server.use((err, req, res, next)=>{
+    res.json({
+        stack: err.stack,
+        message: err.message 
+    })
+})
+
+
+
 module.exports = server;
